@@ -107,7 +107,12 @@ cmd_status() {
     if [ -d "$LIVE_PROJECT" ] && [ -d "$DEVICE_PROJECT" ]; then
       local diff
       # --checksum で中身だけを比較する。更新時刻の差で騒がないようにするため。
-      diff="$(rsync -rin --checksum --delete "${EXCLUDES[@]}" "$LIVE_PROJECT/" "$DEVICE_PROJECT/" || true)"
+      #
+      # さらに rsync -i の出力から、先頭が "." の行（＝転送なし＝中身は同一で
+      # 更新時刻などの属性しか違わない）を落とす。Max がファイルを開き直すだけで
+      # mtime が変わるので、これを出すと毎回ノイズになる。
+      diff="$(rsync -rin --checksum --delete "${EXCLUDES[@]}" "$LIVE_PROJECT/" "$DEVICE_PROJECT/" \
+              | grep -v '^\.' || true)"
       if [ -z "$diff" ]; then
         ok "  Project は一致"
       else
