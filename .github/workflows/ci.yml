@@ -1,0 +1,36 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: シェルスクリプトの構文チェック
+        run: for f in scripts/*.sh; do bash -n "$f"; done
+
+      # 助言扱い。ローカルに shellcheck が入っていない環境でも開発できるよう
+      # ブロッキングにはしていない。指摘を潰しきったら continue-on-error を外す。
+      - name: shellcheck
+        continue-on-error: true
+        run: shellcheck -x scripts/*.sh
+
+      - name: 共有パッチャーが各デバイスに反映されているか
+        run: ./scripts/shared-sync.sh --check
+
+      - name: 追跡中の amxd が unfrozen か
+        # frozen な amxd をソースにコミットすると差分が読めなくなるので弾く。
+        run: |
+          fail=0
+          for f in devices/*/*.amxd; do
+            if LC_ALL=C grep -q '"dependency_cache"' "$f"; then
+              echo "::error file=$f::frozen な amxd がコミットされています。Max で Unfreeze してください。"
+              fail=1
+            fi
+          done
+          exit $fail

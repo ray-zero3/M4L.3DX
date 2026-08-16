@@ -1,0 +1,7 @@
+# 複数デバイスで使う自作パッチャーの原本を置く場所。
+#
+# ここに置いたファイルを devices/<name>/device.conf の SHARED= に列挙すると、
+# scripts/shared-sync.sh が各デバイスの Project/patchers/ へコピーする。
+#
+# Max は「各 Project フォルダに実体がある」前提で依存を解決するため、
+# シンボリックリンクや検索パスでは共有できず、実体をコピーするしかない。

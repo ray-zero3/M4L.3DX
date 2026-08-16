@@ -1,0 +1,24 @@
+.DS_Store
+Icon?
+
+# Freeze 済み amxd の出力先。配布物は GitHub Releases で管理するため追跡しない。
+/dist/
+
+# Ableton 公式デバイス「Audio Sends」由来のパッチャー。
+# 再配布しないので追跡せず、scripts/install.sh がローカルから取得する。
+devices/**/SendsRouting.maxpat
+devices/**/ReceivesRouting.maxpat
+devices/**/RoutingObjects2.maxpat
+
+# Max が作る日付付きの手動バックアップ
+devices/**/*_[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].maxsnap
+
+# Max がプロジェクト整理で作る作業フォルダ（既存ファイルの退避コピー）
+devices/**/discarded/
+devices/**/duplicates/
+
+# 現在どのデバイスからも参照されていない残置スナップショット
+devices/**/HPL Processor Ultimate.maxsnap
+
+# ローカル検証用の一時ディレクトリ
+/.tmp-test/

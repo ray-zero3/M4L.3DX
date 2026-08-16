@@ -1,0 +1,21 @@
+# Max / Max for Live のファイルは改行コード変換を絶対にさせない。
+#
+# .amxd は「32byte のバイナリヘッダ + JSON 本文」という構造で、ヘッダの ptch
+# チャンクに本文のバイト長が記録されている。git に改行を変換されると長さが
+# ズレてファイルが壊れ、Max で開けなくなる。
+#
+# -text  … 改行変換をしない
+# diff   … バイナリ扱いせず git diff でテキストとして差分表示する
+*.amxd    -text diff
+*.maxpat  -text diff
+*.maxsnap -text diff
+*.maxproj -text diff
+*.gendsp  -text diff
+*.maxhelp -text diff
+
+# リポジトリ側のテキストファイルは LF に固定する
+*.md   text eol=lf
+*.sh   text eol=lf
+*.conf text eol=lf
+*.json text eol=lf
+*.yml  text eol=lf

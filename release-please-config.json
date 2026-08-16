@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "separate-pull-requests": true,
+  "include-component-in-tag": true,
+  "packages": {
+    "devices/panner-for-8ch": {
+      "release-type": "simple",
+      "component": "panner-for-8ch",
+      "draft": true,
+      "changelog-path": "CHANGELOG.md"
+    },
+    "devices/8to2ch-hpl": {
+      "release-type": "simple",
+      "component": "8to2ch-hpl",
+      "draft": true,
+      "changelog-path": "CHANGELOG.md"
+    }
+  }
+}
