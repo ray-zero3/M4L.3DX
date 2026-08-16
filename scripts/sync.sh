@@ -36,19 +36,31 @@ resolve_targets() {
 cmd_pull() {
   require_paths
   resolve_targets "$@"
+  local name skipped=0
   for name in "${TARGETS[@]}"; do
     load_device "$name"
     build_excludes
 
     [ -f "$LIVE_AMXD" ] || die "$LIVE_AMXD がありません"
     [ -d "$LIVE_PROJECT" ] || die "$LIVE_PROJECT がありません"
-    assert_unfrozen "$LIVE_AMXD"
+
+    # frozen なデバイスは取り込まずに飛ばす。
+    # ここで全体を止めると、無関係なデバイスの作業まで巻き添えで止まる。
+    # 見落とさないよう、最後に非ゼロで終了する。
+    if is_frozen "$LIVE_AMXD"; then
+      warn "$name: frozen のためスキップしました
+       Max の雪の結晶アイコンで Unfreeze して保存してから、もう一度実行してください。"
+      skipped=$((skipped + 1))
+      continue
+    fi
 
     mkdir -p "$DEVICE_PROJECT"
     rsync -a "$LIVE_AMXD" "$DEVICE_AMXD"
     rsync -a --delete "${EXCLUDES[@]}" "$LIVE_PROJECT/" "$DEVICE_PROJECT/"
     ok "pull $name"
   done
+
+  [ "$skipped" -eq 0 ] || die "frozen のため $skipped 個のデバイスを取り込めませんでした。"
 }
 
 # ---------------------------------------------------------------- push

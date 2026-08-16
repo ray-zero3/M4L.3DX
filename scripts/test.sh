@@ -175,6 +175,20 @@ else
   echo "== dist の frozen ガード =="
   check_fails "unfrozen な amxd は dist に出せない" \
     "$REPO_ROOT/scripts/sync.sh" dist "$target"
+
+  echo
+  echo "== pull の frozen スキップ =="
+  # 砂場側の amxd を frozen に差し替えて pull を試す。
+  # リポジトリ側のソースが上書きされないことまで確認する。
+  load_device "$target"
+  before="$(sha1_of "$DEVICE_AMXD")"
+  cp "$SANDBOX/frozen.amxd" "$M4L_USER_LIBRARY/$target.amxd"
+  check_fails "frozen があると非ゼロで終了する" \
+    "$REPO_ROOT/scripts/sync.sh" pull "$target"
+  check "  → リポジトリのソースは上書きされない" \
+    test "$(sha1_of "$DEVICE_AMXD")" = "$before"
+  check "  → スキップした旨を警告する" bash -c \
+    "'$REPO_ROOT/scripts/sync.sh' pull '$target' 2>&1 | grep -q 'frozen のためスキップ'"
 fi
 
 echo
