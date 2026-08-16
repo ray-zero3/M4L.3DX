@@ -9,6 +9,8 @@ name: release-please
 on:
   push:
     branches: [main]
+  # タグ生成の取りこぼしを手で回収できるようにしておく
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -18,7 +20,37 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: googleapis/release-please-action@v4
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      # GitHub はドラフト Release では git タグを作らない（公開時に作られる）。
+      # 一方 release-please は「前回リリースのタグ」を基準に未リリースの
+      # コミットを数えるため、タグがないと同じコミットを何度も計上して
+      # バージョンだけ上がった Release PR を延々と作り続けてしまう。
+      #
+      # そこでドラフトの時点でタグだけ先に打っておく。あとで
+      # scripts/release.sh がドラフトを公開するとき、GitHub は既存の
+      # タグをそのまま使うので二重にはならない。
+      - name: ドラフト Release のタグを先に作る
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          created=0
+          for tag in $(gh release list --limit 100 --json tagName,isDraft \
+                         --jq '.[] | select(.isDraft) | .tagName'); do
+            if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+              continue
+            fi
+            echo "タグを作成: $tag → ${GITHUB_SHA}"
+            git tag "$tag" "$GITHUB_SHA"
+            git push origin "refs/tags/$tag"
+            created=$((created + 1))
+          done
+          [ "$created" -eq 0 ] && echo "作成が必要なタグはありませんでした"
+          exit 0
