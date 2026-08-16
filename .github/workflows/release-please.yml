@@ -5,11 +5,22 @@ name: release-please
 # CHANGELOG 入りの「ドラフト」Release が作られる。
 # ドラフトなのは、配布物の frozen amxd が Max の GUI 操作でしか作れず、
 # 後から scripts/release.sh で添付して公開する運用にしているため。
+#
+# ドラフト運用には落とし穴が2つあり、下の3段構成はその両方への対処になっている。
+#
+#   1. GitHub はドラフト Release では git タグを作らない（公開時に作られる）。
+#      release-please は前回リリースのタグを基準に未リリースのコミットを
+#      数えるため、タグがないとリリース済みのコミットを何度も数え直す。
+#   2. release-please のアクションを素で1回動かすと「Release 作成」と
+#      「PR 組み立て」が続けて走る。あいだにタグを作る隙がないため、
+#      PR 組み立ての時点ではまだタグがなく、1 の症状が毎回再発する。
+#
+# そこで skip-github-pull-request / skip-github-release で処理を分割し、
+# あいだにタグ作成を挟む。
 
 on:
   push:
     branches: [main]
-  # タグ生成の取りこぼしを手で回収できるようにしておく
   workflow_dispatch:
 
 permissions:
@@ -24,20 +35,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: googleapis/release-please-action@v4
+      # 1. マージ済みの Release PR からドラフト Release を作る（PR は組み立てない）
+      - name: ドラフト Release を作る
+        uses: googleapis/release-please-action@v4
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          skip-github-pull-request: true
 
-      # GitHub はドラフト Release では git タグを作らない（公開時に作られる）。
-      # 一方 release-please は「前回リリースのタグ」を基準に未リリースの
-      # コミットを数えるため、タグがないと同じコミットを何度も計上して
-      # バージョンだけ上がった Release PR を延々と作り続けてしまう。
-      #
-      # そこでドラフトの時点でタグだけ先に打っておく。あとで
-      # scripts/release.sh がドラフトを公開するとき、GitHub は既存の
-      # タグをそのまま使うので二重にはならない。
-      - name: ドラフト Release のタグを先に作る
+      # 2. ドラフトにはタグが付かないので、ここで打っておく。
+      #    あとで scripts/release.sh がドラフトを公開するとき、GitHub は
+      #    既存のタグを再利用するので二重にはならない。
+      - name: ドラフト Release のタグを作る
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -54,3 +63,12 @@ jobs:
           done
           [ "$created" -eq 0 ] && echo "作成が必要なタグはありませんでした"
           exit 0
+
+      # 3. タグが揃った状態で Release PR を組み立てる。
+      #    ここまで来ればリリース済みのコミットは正しく除外される。
+      - name: Release PR を組み立てる
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          skip-github-release: true
