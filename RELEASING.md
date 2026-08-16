@@ -25,6 +25,13 @@ Freeze は Max の GUI 操作でしか実行できず、CLI がないためこ�
 Release がいったんドラフトで止まるのは、配布物の frozen amxd を後から手で
 用意して添付する必要があるためです。中身のない Release が公開されるのを防いでいます。
 
+> **未マージの Release PR について。** 全デバイスの Release PR が
+> `.release-please-manifest.json` を共有するため、main が動くたびに未マージの
+> Release PR がコンフリクトします。設定で `always-update: true` にしてあるので、
+> release-please が毎回 PR を作り直して解消します。それでもコンフリクトが残る
+> 場合は、その PR を閉じてブランチを消し、`gh workflow run release-please.yml`
+> で作り直させてください（内容は決定論的に再生成されます）。
+
 > **タグについて。** GitHub はドラフト Release では git タグを作りません（公開時に
 > 作られます）。一方 release-please は前回リリースのタグを基準に未リリースの
 > コミットを数えるため、タグがないと同じコミットを何度も計上して、バージョンだけ
