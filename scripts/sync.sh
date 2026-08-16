@@ -94,7 +94,8 @@ cmd_status() {
 
     if [ -d "$LIVE_PROJECT" ] && [ -d "$DEVICE_PROJECT" ]; then
       local diff
-      diff="$(rsync -rin --delete "${EXCLUDES[@]}" "$LIVE_PROJECT/" "$DEVICE_PROJECT/" || true)"
+      # --checksum で中身だけを比較する。更新時刻の差で騒がないようにするため。
+      diff="$(rsync -rin --checksum --delete "${EXCLUDES[@]}" "$LIVE_PROJECT/" "$DEVICE_PROJECT/" || true)"
       if [ -z "$diff" ]; then
         ok "  Project は一致"
       else
@@ -135,7 +136,9 @@ cmd_vendor() {
       fi
 
       mkdir -p "$(dirname "$dst")"
-      cp "$src" "$dst"
+      # -p で更新時刻を維持する。落とすと status が中身の同じ vendor ファイルを
+      # 毎回「差分あり」と報告してしまう。
+      cp -p "$src" "$dst"
       ok "vendor $name ← $(field "$rec" 2)"
     done
   done
